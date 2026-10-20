@@ -1,0 +1,449 @@
+```html
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>یارییا بیرکارییا زارۆکان - کرم زاخوی</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Kurdish readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Noto+Naskh+Arabic:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Fredoka', 'Noto Naskh Arabic', sans-serif;
+            background: radial-gradient(circle at top left, #4f46e5, #0f172a);
+            min-height: 100vh;
+            user-select: none;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            border: 4px solid #f59e0b;
+        }
+
+        .btn-bounce {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-bounce:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+        }
+        .btn-bounce:active {
+            transform: translateY(2px) scale(0.95);
+        }
+
+        .emoji-pulse {
+            animation: pulse-animation 1.8s infinite ease-in-out;
+            display: inline-block;
+        }
+        @keyframes pulse-animation {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.15) rotate(5deg); }
+        }
+
+        .grid-group {
+            background: #fffbe0;
+            border: 3px dashed #f59e0b;
+            border-radius: 1.25rem;
+            padding: 0.6rem;
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.4rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .math-symbol {
+            font-size: 2.75rem;
+            color: #4f46e5;
+            font-weight: 900;
+            text-shadow: 2px 2px 0px #e0e7ff;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center p-3 md:p-6 min-h-screen">
+
+    <div class="glass-card w-full max-w-2xl rounded-3xl shadow-2xl p-4 md:p-8 text-center relative overflow-hidden my-auto">
+        
+        <!-- Header & Audio Toggle Controls -->
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+            <!-- Modern Synth Background Music Button -->
+            <button id="bgMusicBtn" onclick="toggleBgMusic()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-2xl text-sm md:text-base flex items-center gap-2 shadow-lg transition btn-bounce">
+                <span id="musicIcon"><i class="fa-solid fa-music"></i></span>
+                <span id="musicText">مۆزیك: گرتییە</span>
+            </button>
+
+            <!-- Score and Streak -->
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-400 text-amber-950 font-black px-4 py-1.5 rounded-2xl shadow-inner text-base md:text-lg flex items-center gap-1.5">
+                    <span>🌟</span> نمرە: <span id="scoreText">0</span>
+                </div>
+                <div class="bg-orange-500 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-inner text-sm md:text-base flex items-center gap-1">
+                    <span>🔥</span> <span id="streakText">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-2xl md:text-3xl font-extrabold text-indigo-950 mb-3 tracking-wide">
+            🎓 یارییا ژماران و بیرکارییا زارۆکان 🎈
+        </h1>
+
+        <!-- Mode Switcher (کۆمکرن / لێکدان / تێکەڵ) -->
+        <div class="flex justify-center gap-2 mb-5 bg-indigo-50 p-2 rounded-2xl border-2 border-indigo-200">
+            <button id="modeAdd" onclick="setMode('add')" class="flex-1 py-2 px-3 rounded-xl font-bold text-sm md:text-base transition bg-indigo-600 text-white shadow-md">
+                ➕ کۆمکرن
+            </button>
+            <button id="modeMul" onclick="setMode('mul')" class="flex-1 py-2 px-3 rounded-xl font-bold text-sm md:text-base transition bg-white text-indigo-800 hover:bg-indigo-100">
+                ✖️ لێکدان
+            </button>
+            <button id="modeMix" onclick="setMode('mix')" class="flex-1 py-2 px-3 rounded-xl font-bold text-sm md:text-base transition bg-white text-indigo-800 hover:bg-indigo-100">
+                🔀 تێکەڵ
+            </button>
+        </div>
+
+        <!-- Explanatory Label -->
+        <div id="explanationLabel" class="text-indigo-800 font-extrabold mb-3 text-base md:text-lg bg-indigo-100/80 py-1.5 px-4 rounded-xl inline-block shadow-sm">
+            بژمێره و بەرسڤا ڕاست هەڵبژێره:
+        </div>
+
+        <!-- Visual Math Display Container -->
+        <div class="bg-gradient-to-b from-indigo-50/90 to-white rounded-2xl p-4 md:p-6 mb-5 shadow-inner border-2 border-indigo-100 flex flex-col items-center justify-center min-h-[170px]">
+            
+            <div id="visualDisplay" class="flex flex-wrap items-center justify-center gap-3 md:gap-5 w-full">
+                <!-- Visual groups rendered dynamically -->
+            </div>
+
+            <!-- Visual Math Formula Label -->
+            <div id="textFormula" class="mt-4 text-2xl md:text-3xl font-black text-indigo-950 dir-ltr tracking-widest">
+                <!-- Formula rendered dynamically -->
+            </div>
+        </div>
+
+        <!-- Answer Choice Buttons -->
+        <div id="optionsContainer" class="grid grid-cols-3 gap-3 md:gap-4 mb-3">
+            <!-- Buttons rendered dynamically -->
+        </div>
+
+        <!-- Feedback Message -->
+        <div id="feedbackMessage" class="h-10 text-lg md:text-xl font-black flex items-center justify-center">
+            <!-- Feedback -->
+        </div>
+
+    </div>
+
+    <!-- Modern Footer with Creator Name & WhatsApp Number -->
+    <footer class="mt-4 mb-2 text-center text-white/90 font-bold bg-slate-900/80 backdrop-filter backdrop-blur-md px-6 py-3 rounded-2xl border border-amber-400/40 shadow-xl max-w-lg w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-sm md:text-base">
+        <div class="flex items-center gap-2">
+            <span class="text-amber-400 text-lg"><i class="fa-solid fa-code"></i></span>
+            <span>دروستکەرێ یاریێ: <strong class="text-amber-300 font-extrabold">کرم زاخوی</strong></span>
+        </div>
+        <a href="https://wa.me/9647504228476" target="_blank" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-xl transition shadow-md border border-emerald-400/30 dir-ltr">
+            <i class="fa-brands fa-whatsapp text-lg text-emerald-200"></i>
+            <span class="tracking-wider font-semibold">07504228476</span>
+        </a>
+    </footer>
+
+    <script>
+        // Web Audio API Synthesizer setup for audio effects and modern synth kids background beat
+        let audioCtx = null;
+        let isMusicPlaying = false;
+        let bgMusicTimer = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Sound Effect: Correct Answer (Modern Arpeggio Sound)
+        function playSuccessSound() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+            notes.forEach((freq, idx) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.07);
+
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime + idx * 0.07);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.07 + 0.3);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(audioCtx.currentTime + idx * 0.07);
+                osc.stop(audioCtx.currentTime + idx * 0.07 + 0.3);
+            });
+        }
+
+        // Sound Effect: Error
+        function playErrorSound() {
+            initAudio();
+            if (!audioCtx) return;
+
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(90, audioCtx.currentTime + 0.35);
+
+            gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.35);
+        }
+
+        // Modern Upbeat Synth Track Loop for Kids
+        function toggleBgMusic() {
+            initAudio();
+            isMusicPlaying = !isMusicPlaying;
+
+            const btn = document.getElementById('bgMusicBtn');
+            const icon = document.getElementById('musicIcon');
+            const text = document.getElementById('musicText');
+
+            if (isMusicPlaying) {
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                icon.innerHTML = '<i class="fa-solid fa-volume-high animate-pulse"></i>';
+                text.innerText = 'مۆزیك: ڤەکرییە';
+
+                let step = 0;
+                // Modern synth bass-line & chords notes
+                const melody = [
+                    { note: 261.63, duration: 0.2 }, // C4
+                    { note: 329.63, duration: 0.2 }, // E4
+                    { note: 392.00, duration: 0.2 }, // G4
+                    { note: 523.25, duration: 0.3 }, // C5
+                    { note: 440.00, duration: 0.2 }, // A4
+                    { note: 349.23, duration: 0.2 }, // F4
+                    { note: 392.00, duration: 0.3 }  // G4
+                ];
+
+                bgMusicTimer = setInterval(() => {
+                    if (!isMusicPlaying || !audioCtx) return;
+
+                    let item = melody[step % melody.length];
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(item.note, audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + item.duration);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + item.duration);
+
+                    step++;
+                }, 320);
+
+            } else {
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                icon.innerHTML = '<i class="fa-solid fa-music"></i>';
+                text.innerText = 'مۆزیك: گرتییە';
+                if (bgMusicTimer) clearInterval(bgMusicTimer);
+            }
+        }
+
+        // Game State Variables
+        const emojis = ['🍎', '⭐️', '🎈', '🐱', '⚽', '🍬', '🍓', '🐶', '🚗', '🐥'];
+        let currentMode = 'add'; 
+        let num1 = 1;
+        let num2 = 1;
+        let currentOp = '+'; 
+        let correctAnswer = 0;
+        let score = 0;
+        let streak = 0;
+
+        function setMode(mode) {
+            currentMode = mode;
+            
+            ['Add', 'Mul', 'Mix'].forEach(m => {
+                const btn = document.getElementById('mode' + m);
+                if (m.toLowerCase() === mode) {
+                    btn.className = "flex-1 py-2 px-3 rounded-xl font-bold text-sm md:text-base transition bg-indigo-600 text-white shadow-md";
+                } else {
+                    btn.className = "flex-1 py-2 px-3 rounded-xl font-bold text-sm md:text-base transition bg-white text-indigo-800 hover:bg-indigo-100";
+                }
+            });
+
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            document.getElementById('feedbackMessage').innerHTML = '';
+
+            if (currentMode === 'add') {
+                currentOp = '+';
+            } else if (currentMode === 'mul') {
+                currentOp = '×';
+            } else {
+                currentOp = Math.random() > 0.5 ? '+' : '×';
+            }
+
+            const chosenEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+            if (currentOp === '+') {
+                num1 = Math.floor(Math.random() * 5) + 1;
+                num2 = Math.floor(Math.random() * 5) + 1;
+                correctAnswer = num1 + num2;
+
+                document.getElementById('explanationLabel').innerText = 'کۆمکرن: هەموو وێنان بژمێره (+)';
+                renderAdditionVisual(num1, num2, chosenEmoji);
+
+            } else {
+                num1 = Math.floor(Math.random() * 3) + 2; 
+                num2 = Math.floor(Math.random() * 3) + 1; 
+                correctAnswer = num1 * num2;
+
+                document.getElementById('explanationLabel').innerText = `لێکدان: ${num1} کۆمێن (${num2}) وێنەیی (×)`;
+                renderMultiplicationVisual(num1, num2, chosenEmoji);
+            }
+
+            document.getElementById('textFormula').innerText = `${num1} ${currentOp} ${num2} = ?`;
+            generateChoiceButtons();
+        }
+
+        function renderAdditionVisual(n1, n2, emoji) {
+            const container = document.getElementById('visualDisplay');
+            container.innerHTML = '';
+
+            const group1 = document.createElement('div');
+            group1.className = 'bg-blue-100/90 border-2 border-blue-300 rounded-2xl p-3 flex flex-wrap justify-center gap-1.5 max-w-[180px] shadow-sm';
+            for (let i = 0; i < n1; i++) {
+                group1.innerHTML += `<span class="text-3xl md:text-4xl emoji-pulse">${emoji}</span>`;
+            }
+
+            const plus = document.createElement('div');
+            plus.className = 'math-symbol';
+            plus.innerText = '+';
+
+            const group2 = document.createElement('div');
+            group2.className = 'bg-pink-100/90 border-2 border-pink-300 rounded-2xl p-3 flex flex-wrap justify-center gap-1.5 max-w-[180px] shadow-sm';
+            for (let i = 0; i < n2; i++) {
+                group2.innerHTML += `<span class="text-3xl md:text-4xl emoji-pulse">${emoji}</span>`;
+            }
+
+            container.appendChild(group1);
+            container.appendChild(plus);
+            container.appendChild(group2);
+        }
+
+        function renderMultiplicationVisual(groupsCount, itemsPerGroup, emoji) {
+            const container = document.getElementById('visualDisplay');
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex flex-wrap justify-center items-center gap-3 max-w-full';
+
+            for (let g = 0; g < groupsCount; g++) {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'grid-group hover:scale-105 transition';
+
+                for (let i = 0; i < itemsPerGroup; i++) {
+                    groupEl.innerHTML += `<span class="text-2.5xl md:text-3.5xl emoji-pulse">${emoji}</span>`;
+                }
+
+                wrapper.appendChild(groupEl);
+
+                if (g < groupsCount - 1) {
+                    const tag = document.createElement('span');
+                    tag.className = 'text-amber-500 font-extrabold text-xl';
+                    tag.innerText = '•';
+                    wrapper.appendChild(tag);
+                }
+            }
+
+            container.appendChild(wrapper);
+        }
+
+        function generateChoiceButtons() {
+            let choices = [correctAnswer];
+            
+            while (choices.length < 3) {
+                let offset = (Math.floor(Math.random() * 3) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                let wrongVal = correctAnswer + offset;
+                if (wrongVal > 0 && !choices.includes(wrongVal)) {
+                    choices.push(wrongVal);
+                }
+            }
+
+            choices.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            choices.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-bounce bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-amber-950 font-black text-2xl md:text-3xl py-3.5 rounded-2xl border-b-4 border-amber-600 shadow-lg cursor-pointer';
+                btn.innerText = val;
+                btn.onclick = () => checkAnswer(val);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedVal) {
+            const feedback = document.getElementById('feedbackMessage');
+
+            if (selectedVal === correctAnswer) {
+                playSuccessSound();
+                score += 10;
+                streak += 1;
+
+                document.getElementById('scoreText').innerText = score;
+                document.getElementById('streakText').innerText = streak;
+
+                feedback.innerHTML = `<span class="text-emerald-600 animate-bounce">بژیت! بەرسڤا تە ڕاستە 🎉👏</span>`;
+
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 50,
+                        spread: 60,
+                        origin: { y: 0.7 }
+                    });
+                }
+
+                setTimeout(generateQuestion, 1400);
+
+            } else {
+                playErrorSound();
+                streak = 0;
+                document.getElementById('streakText').innerText = streak;
+
+                feedback.innerHTML = `<span class="text-rose-600">نەخێر ❌! نەخەمینە، جارەکا دی هەول بدە!</span>`;
+            }
+        }
+
+        window.onload = () => {
+            generateQuestion();
+        };
+    </script>
+</body>
+</html>
+```
